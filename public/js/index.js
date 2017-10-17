@@ -1,4 +1,8 @@
 var socket = io();
+
+const herokuHost = 'https://rocky-dusk-73853.herokuapp.com/';
+const localhost = 'http://localhost:3000/';
+
 socket.on('connect', function () {
 	console.log('connected to server!');
 });
@@ -23,7 +27,7 @@ $("#signinForm").on('submit', function (e) {
 	var username = $('[name=username]').val();
 	$.ajax({
 		type: 'POST',
-		url: 'http://localhost:3000/login',
+		url: herokuhost + 'login',
 		contentType: 'application/json',
 		data: JSON.stringify({ username: username }),
 		success: function (data) {
