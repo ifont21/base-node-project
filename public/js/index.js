@@ -27,7 +27,7 @@ $("#signinForm").on('submit', function (e) {
 	var username = $('[name=username]').val();
 	$.ajax({
 		type: 'POST',
-		url: herokuhost + 'login',
+		url: herokuHost + 'login',
 		contentType: 'application/json',
 		data: JSON.stringify({ username: username }),
 		success: function (data) {
