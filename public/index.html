@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+</head>
+
+<body>
+	<ul id="usersOnline"></ul>
+	<fieldset>
+		<p>sign up</p>
+		<form id="signupForm">
+			<input type="text" name="username_login" placeholder="user34" />
+			<button>sign up</button>
+		</form>
+	</fieldset>
+
+	<fieldset>
+		<p>sign in</p>
+		<form id="signinForm">
+			<input type="text" name="username" placeholder="user34" />
+			<button>login</button>
+		</form>
+	</fieldset>
+	<p id="welcome"></p>
+
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="./js/lib/jquery-3.2.1.min.js"></script>
+	<script src="./js/index.js"></script>
+</body>
+
+</html>
