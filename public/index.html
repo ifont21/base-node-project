@@ -9,23 +9,27 @@
 </head>
 
 <body>
+	<p>Users Online</p>
 	<ul id="usersOnline"></ul>
-	<fieldset>
-		<p>sign up</p>
-		<form id="signupForm">
-			<input type="text" name="username_login" placeholder="user34" />
-			<button>sign up</button>
-		</form>
-	</fieldset>
+	<div class="form-section">
+		<fieldset>
+			<p>sign up</p>
+			<form id="signupForm">
+				<input type="text" name="username_new" placeholder="user34" />
+				<button>sign up</button>
+			</form>
+		</fieldset>
 
-	<fieldset>
-		<p>sign in</p>
-		<form id="signinForm">
-			<input type="text" name="username" placeholder="user34" />
-			<button>login</button>
-		</form>
-	</fieldset>
+		<fieldset>
+			<p>sign in</p>
+			<form id="signinForm">
+				<input type="text" name="username" placeholder="user34" />
+				<button>login</button>
+			</form>
+		</fieldset>
+	</div>
 	<p id="welcome"></p>
+	<input type="hidden" id="userLogged" />
 
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="./js/lib/jquery-3.2.1.min.js"></script>

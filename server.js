@@ -17,10 +17,18 @@ io.on('connection', (socket) => {
 		console.log('user disconnected!!');
 	});
 
+	socket.emit('getOnlines', { init: true });
+
 	socket.on('online', (user) => {
 		socket.broadcast.emit('userLoggedIn', {
 			username: user.username
 		});
+	});
+
+	socket.on('setOnlines', (emitted) => {
+		if (emitted) {
+			io.emit('getOnlines', { init: false });
+		}
 	});
 
 });
@@ -29,6 +37,49 @@ app.use(bodyParser.json());
 
 app.use(express.static(`${__dirname}/public`));
 
+
+//fetch online users *******************************************************************************
+app.get('/users/online', (req, res) => {
+	Player.find({ 'online': true }).then((doc) => {
+		res.status(200).send(doc);
+	}, (err) => {
+		res.status(500).send(err);
+	});
+});
+
+// put online users *********************************************************************************
+app.put('/online', (req, res) => {
+	Player.findOne({ 'username': req.body.username }).then((doc) => {
+		console.log('player', doc);
+		doc.online = true;
+		doc.save().then((save) => {
+			res.status(200).send(save);
+		}, (err) => {
+			res.status(500).send(err);
+		});
+	}, (err) => {
+		res.status(500).send(err);
+	})
+});
+
+//offline users *********************************************************************************
+app.put('/offline', (req, res) => {
+	Player.findOne({ 'username': req.body.username }).then((doc) => {
+		console.log('player', doc);
+		doc.online = false;
+		doc.save().then((res) => {
+			res.status(200).send(res);
+		}, (err) => {
+			res.status(500).send(err);
+		});
+	}, (err) => {
+		res.status(500).send(err);
+	})
+});
+
+
+
+// create players and login **************************************************************************
 app.post('/players', (req, res) => {
 	const player = new Player({
 		username: req.body.username
@@ -41,6 +92,7 @@ app.post('/players', (req, res) => {
 	});
 });
 
+//login to play ***************************************************************************************
 app.post('/login', (req, res) => {
 	Player.findOne({ 'username': req.body.username }).then((player) => {
 		res.send(player);
@@ -49,6 +101,7 @@ app.post('/login', (req, res) => {
 	});
 });
 
+// deal a challenge *********************************************************************************
 app.post('/challenges', (req, res) => {
 	const challenge = new Challenge();
 	Player.find({

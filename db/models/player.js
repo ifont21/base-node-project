@@ -13,6 +13,10 @@ const Player = mongoose.model('Player', {
 	defeates:{
 		type: Number,
 		default: 0
+	},
+	online:{
+		type: Boolean,
+		default: false
 	}
 });
 
