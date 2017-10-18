@@ -1,7 +1,7 @@
 var socket = io();
 
 const herokuHost = 'https://rocky-dusk-73853.herokuapp.com/';
-const herokuHost = 'http://herokuHost:3000/';
+const localhost = 'http://localhost:3000/';
 
 let onlines = [];
 
