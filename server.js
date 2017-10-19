@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { mongoose } = require('./db/mongoose');
 const bodyParser = require('body-parser');
+const session = require('express-session');
 const socketIO = require('socket.io');
 const { Player, Challenge } = require('./db/models/index');
 
@@ -11,24 +12,35 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
+let $session = [];
+
+app.use(session({ secret: 'ssshhhhh' }));
+
 io.on('connection', (socket) => {
 	console.log('New user connected!');
-	socket.on('disconnect', () => {
-		console.log('user disconnected!!');
-	});
-
-	socket.emit('getOnlines', { init: true });
+	
+	socket.emit('getOnlines', { init: true, session: $session });
 
 	socket.on('online', (user) => {
+		let sessionObj = {};
+		sessionObj.user = user.username;
+		sessionObj.socket = socket.id;
+		if (!verifyExistUser(user, $session)) {
+			$session.push(sessionObj);
+		}
+		io.emit('getOnlines', { init: false, session: $session });
+
 		socket.broadcast.emit('userLoggedIn', {
 			username: user.username
 		});
 	});
 
-	socket.on('setOnlines', (emitted) => {
-		if (emitted) {
-			io.emit('getOnlines', { init: false });
+	socket.on('disconnect', function () {
+		let i = getSocketId(socket.id, $session);
+		if (typeof i === 'number') {
+			$session.splice(i, 1);
 		}
+		io.emit('getOnlines', { init: false, session: $session });
 	});
 
 });
@@ -41,6 +53,7 @@ app.use(express.static(`${__dirname}/public`));
 //fetch online users *******************************************************************************
 app.get('/users/online', (req, res) => {
 	Player.find({ 'online': true }).then((doc) => {
+		console.log('session', $session);
 		res.status(200).send(doc);
 	}, (err) => {
 		res.status(500).send(err);
@@ -125,6 +138,29 @@ app.post('/challenges', (req, res) => {
 		res.status(500).send(error);
 	});
 });
+
+//verify exist user online 
+const verifyExistUser = (user, session) => {
+	let exist = false;
+	for (let sess in session) {
+		if (user === session[sess].user) {
+			exist = true;
+			break;
+		}
+	}
+	return exist;
+}
+
+const getSocketId = (socket, session) => {
+	let position;
+	for (let i = 0; i < session.length; i++) {
+		if (socket === session[i].socket) {
+			position = i;
+			break;
+		}
+	}
+	return position;
+}
 
 app.get('/', (req, res) => {
 	res.send('Hello world this is Node');

@@ -13,33 +13,23 @@ socket.on('disconnect', function () {
 	console.log('disconnected from server!');
 });
 
-socket.on('getOnlines', function (emitted) {
+socket.on('getOnlines', function (data) {
 
-	console.log('Fetch Online Users');
-	$.ajax({
-		type: 'GET',
-		url: herokuHost + 'users/online',
-		success: function (data) {
-			console.log('online users', data);
-			if (emitted.init) {
-				for (var item in data) {
-					var li = $('<li></li>');
-					li.text(data[item].username);
-					$('#usersOnline').append(li);
-				}
-			} else {
-				$('#usersOnline').html('');
-				for (var item in data) {
-					var li = $('<li></li>');
-					li.text(data[item].username);
-					$('#usersOnline').append(li);
-				}
-			}
-
-
-		},
-		dataType: 'json'
-	});
+	console.log('Fetch Online Users', data);
+	if (data.init) {
+		for (var item in data.session) {
+			var li = $('<li></li>');
+			li.text(data.session[item].user);
+			$('#usersOnline').append(li);
+		}
+	} else {
+		$('#usersOnline').html('');
+		for (var item in data.session) {
+			var li = $('<li></li>');
+			li.text(data.session[item].user);
+			$('#usersOnline').append(li);
+		}
+	}
 
 });
 
@@ -82,7 +72,7 @@ function processUserLogedIn(data) {
 		$('.form-section').css('display', 'none');
 		$('#userLogged').val(data.username);
 		socket.emit('online', { username: data.username });
-		addOnlineUserToList(data.username);
+		// addOnlineUserToList(data.username);
 	}
 }
 
