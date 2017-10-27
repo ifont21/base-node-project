@@ -13,12 +13,13 @@ const server = http.createServer(app);
 const io = socketIO(server);
 
 let $session = [];
+let $challenges = [];
 
 app.use(session({ secret: 'ssshhhhh' }));
 
 io.on('connection', (socket) => {
 	console.log('New user connected!');
-	
+
 	socket.emit('getOnlines', { init: true, session: $session });
 
 	socket.on('online', (user) => {
@@ -32,6 +33,14 @@ io.on('connection', (socket) => {
 
 		socket.broadcast.emit('userLoggedIn', {
 			username: user.username
+		});
+	});
+
+	socket.on('challenger', (challenge) => {
+		$challenges.push({
+			challenged: challenge.challenged,
+			challenger: challenge.challenger,
+			accept: false
 		});
 	});
 
