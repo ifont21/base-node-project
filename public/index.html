@@ -10,8 +10,28 @@
 
 <body>
 	<div class="online-users">
-			<p>Users Online</p>
-			<ul id="usersOnline"></ul>
+		<h3>Users Online</h3>
+		<ul id="usersOnline"></ul>
+	</div>
+	<div class="challenges">
+		<h3>Challenges</h3>
+		<ul id="challengers"></ul>
+	</div>
+	<div class="challenge">
+		<h3>Challenge</h3>
+		<h4 class="challengerLogged"></h4> vs
+		<h5 class="challengerOther"></h5>
+		<div class="choose-number">
+			number: <input type="text" name="number" /><button class="btn-set" onclick="setNumber()">SET</button>
+		</div>
+		<p class="opponent-ready">The Opponent is Ready!</p>
+		<div class="attempt-number">
+			number: <input type="text" name="attempt" /><button class="btn-set" onclick="setAttempt()">SET</button>
+		</div>
+		<div class="number-game"></div>
+		<div class="attempts">
+			<ul id="attemptList"></ul>
+		</div>
 	</div>
 	<div class="form-section">
 		<fieldset>

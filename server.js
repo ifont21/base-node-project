@@ -21,6 +21,7 @@ io.on('connection', (socket) => {
 	console.log('New user connected!');
 
 	socket.emit('getOnlines', { init: true, session: $session });
+	socket.emit('getChallenges', { init: true, challenges: $challenges });
 
 	socket.on('online', (user) => {
 		let sessionObj = {};
@@ -42,7 +43,26 @@ io.on('connection', (socket) => {
 			challenger: challenge.challenger,
 			accept: false
 		});
+		socket.broadcast.emit('getChallenges', {
+			init: false,
+			challenges: $challenges
+		});
+		socket.emit('getOnlines', { init: false, session: $session });
 	});
+
+	socket.on('startChallenge', (challenge) => {
+		io.emit('loadChallenge', {
+			challenge: challenge
+		});
+	});
+
+	socket.on('setNumber', (data) => {
+		socket.broadcast.emit('setOpponentNumber', data);
+	});
+
+	socket.on('readyToPlay', (data) => {
+		socket.broadcast.emit('loadPlay', data);
+	})
 
 	socket.on('disconnect', function () {
 		let i = getSocketId(socket.id, $session);
