@@ -8,6 +8,10 @@ var numberOpponent = null;
 var myNumber = null;
 var readyToPlay = false;
 
+var myAttempts = [];
+var opponentAttempts = [];
+var myTurn = false;
+
 socket.on('connect', function () {
 	console.log('connected to server!');
 });
@@ -85,12 +89,16 @@ socket.on('setOpponentNumber', function (data) {
 	}
 	$('.opponent-ready').css('display', 'block');
 	if (myNumber && numberOpponent) {
-		console.log('readyyyyyyyyyyyyyyyy!');
 		readyToPlay = true;
 		socket.emit('readyToPlay', true);
+		socket.emit('turn', {
+			opponent: data.opponent,
+			turn: true
+		});
 	}
 	if (readyToPlay) {
 		$('.attempt-number').css('display', 'block');
+		$('input[name=attempt]').prop('disabled', true);
 	}
 });
 
@@ -99,7 +107,25 @@ socket.on('loadPlay', function (data) {
 	if (readyToPlay) {
 		$('.attempt-number').css('display', 'block');
 	}
-})
+});
+
+socket.on('turnPlay', function (data) {
+	var userlogged = $('#userLogged').val();
+	if (data.opponent === userlogged) {
+		myTurn = data.turn;
+	}
+	if (myTurn) {
+		$('input[name=attempt]').prop('disabled', false);
+	}
+});
+
+socket.on('lostPlayer', function (data) {
+	var userlogged = $('#userLogged').val();
+	if (userlogged === data) {
+		$('.challenge').css('display', 'none');
+		$('.loser').css('display', 'block');
+	}
+});
 
 socket.on('welcome', function (message) {
 	console.log(message);
@@ -110,7 +136,7 @@ $("#signupForm").on('submit', function (e) {
 	var username = $('[name=username_new]').val();
 	$.ajax({
 		type: 'POST',
-		url: localhost + 'players',
+		url: herokuHost + 'players',
 		contentType: 'application/json',
 		data: JSON.stringify({ username: username }),
 		success: processUserLogedIn,
@@ -125,7 +151,7 @@ $("#signinForm").on('submit', function (e) {
 	var username = $('[name=username]').val();
 	$.ajax({
 		type: 'POST',
-		url: localhost + 'login',
+		url: herokuHost + 'login',
 		contentType: 'application/json',
 		data: JSON.stringify({ username: username }),
 		success: processUserLogedIn,
@@ -149,7 +175,7 @@ function addOnlineUserToList(username) {
 	onlines.push(username);
 	$.ajax({
 		type: 'PUT',
-		url: localhost + 'online',
+		url: herokuHost + 'online',
 		contentType: 'application/json',
 		data: JSON.stringify({ username: username }),
 		success: function (data) {
@@ -166,6 +192,38 @@ function setNumber() {
 	});
 	$('.number-game').text(myNumber);
 	$('.choose-number').css('display', 'none');
+}
+
+function setAttempt() {
+	var myAttempt = $('input[name=attempt]').val();
+	var opponent = $('.challengerOther').text();
+	var results = getPointsAndFames(numberOpponent, myAttempt);
+	if (results.fames === 4) {
+		$('.challenge').css('display', 'none');
+		$('.winner').css('display', 'block');
+		socket.emit('loser', opponent);
+		return;
+	}
+
+	var attempObj = {
+		number: myAttempt,
+		points: results.points,
+		fames: results.fames
+	};
+	myAttempts.push(attempObj);
+	$('#attemptList').html('');
+	for (var item in myAttempts) {
+		var li = $('<li></li>');
+		var attemptInfo = $('<div>Number: ' + myAttempts[item].number + ' Points: ' + myAttempts[item].points + ' Fame: ' + myAttempts[item].fames + '</div>');
+		li.append(attemptInfo);
+		$('#attemptList').append(li);
+	}
+	myTurn = false;
+	socket.emit('turn', {
+		opponent: $('.challengerOther').text(),
+		turn: true
+	});
+	$('input[name=attempt]').prop('disabled', true);
 }
 
 
@@ -190,7 +248,7 @@ function acceptChallenge(challenger) {
 	if (confirm) {
 		$.ajax({
 			type: 'POST',
-			url: localhost + 'challenges',
+			url: herokuHost + 'challenges',
 			contentType: 'application/json',
 			data: JSON.stringify(payload),
 			success: function (data) {
@@ -203,10 +261,34 @@ function acceptChallenge(challenger) {
 	}
 }
 
+function getPointsAndFames(number, attempt) {
+	var countPoints = 0;
+	var countFames = 0;
+	if (number.length === 4 && attempt.length === 4) {
+		number.split('').forEach(function (element, index) {
+			attempt.split('').forEach(function (elAttempt, iAttempt) {
+				if (element === elAttempt) {
+					if (index === iAttempt) {
+						countFames++;
+					} else {
+						countPoints++;
+					}
+				}
+			});
+		});
+	}
+	return {
+		points: countPoints,
+		fames: countFames
+	}
+}
+
 $(document).ready(function () {
 	$('.online-users').css('display', 'none');
 	$('.challenges').css('display', 'none');
 	$('.challenge').css('display', 'none');
 	$('.opponent-ready').css('display', 'none');
 	$('.attempt-number').css('display', 'none');
+	$('.winner').css('display', 'none');
+	$('.loser').css('display', 'none');
 });

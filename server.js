@@ -64,6 +64,14 @@ io.on('connection', (socket) => {
 		socket.broadcast.emit('loadPlay', data);
 	})
 
+	socket.on('turn', (data) => {
+		socket.broadcast.emit('turnPlay', data);
+	});
+
+	socket.on('loser', (data) => {
+		socket.broadcast.emit('lostPlayer', data);
+	});
+
 	socket.on('disconnect', function () {
 		let i = getSocketId(socket.id, $session);
 		if (typeof i === 'number') {
