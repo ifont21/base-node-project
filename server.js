@@ -4,6 +4,7 @@ const { mongoose } = require('./db/mongoose');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const socketIO = require('socket.io');
+const redis = require('redis');
 const { Player, Challenge } = require('./db/models/index');
 
 const port = process.env.PORT || 3000;
@@ -12,42 +13,72 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-let $session = [];
-let $challenges = [];
+const client = redis.createClient();
 
-app.use(session({ secret: 'ssshhhhh' }));
+client.on('connect', () => {
+	console.log('redis connected!');
+});
 
 io.on('connection', (socket) => {
 	console.log('New user connected!');
 
-	socket.emit('getOnlines', { init: true, session: $session });
-	socket.emit('getChallenges', { init: true, challenges: $challenges });
+	socket.emit('getOnlines', { init: true, session: parseResult(client.smembers('online')) });
+
+	socket.on('fetchChallenges', () => {
+		client.smembers('challenges', (err, reply) => {
+			if (err) return console.log(err);
+			let result = parseResult(reply);
+			console.log(result);
+			socket.emit('getChallenges', { init: true, challenges: result });
+		});
+	});
 
 	socket.on('online', (user) => {
 		let sessionObj = {};
 		sessionObj.user = user.username;
 		sessionObj.socket = socket.id;
-		if (!verifyExistUser(user, $session)) {
-			$session.push(sessionObj);
-		}
-		io.emit('getOnlines', { init: false, session: $session });
-
+		let sessionObjString = JSON.stringify(sessionObj);
+		client.sadd(['onlineUsernames', user.username], (err, result) => {
+			if (err) return console.log(err);
+			if (result === 1) {
+				client.sadd(['online', sessionObjString], (err, result) => {
+					if (err) return console.log(err);
+					if (result === 1) {
+						console.log('OK!');
+					}
+				});
+				client.smembers('online', (err, reply) => {
+					if (err) return console.log(err);
+					let resultJSON = parseResult(reply);
+					io.emit('getOnlines', { init: false, session: resultJSON });
+				});
+			}
+		});
 		socket.broadcast.emit('userLoggedIn', {
 			username: user.username
 		});
 	});
 
 	socket.on('challenger', (challenge) => {
-		$challenges.push({
+		const challengerObj = {
 			challenged: challenge.challenged,
 			challenger: challenge.challenger,
 			accept: false
+		};
+		client.sadd(['challenges', JSON.stringify(challengerObj)], (err, result) => {
+			if (err) return console.log(err);
+			if (result === 1) {
+				client.smembers('challenges', (err, reply) => {
+					if (err) return console.log(err);
+					let resultJSON = parseResult(reply);
+					socket.broadcast.emit('getChallenges', {
+						init: false,
+						challenges: resultJSON
+					});
+				});
+			}
 		});
-		socket.broadcast.emit('getChallenges', {
-			init: false,
-			challenges: $challenges
-		});
-		socket.emit('getOnlines', { init: false, session: $session });
+		socket.emit('getOnlines', { init: true, session: parseResult(client.smembers('online')) });
 	});
 
 	socket.on('startChallenge', (challenge) => {
@@ -73,11 +104,32 @@ io.on('connection', (socket) => {
 	});
 
 	socket.on('disconnect', function () {
-		let i = getSocketId(socket.id, $session);
-		if (typeof i === 'number') {
-			$session.splice(i, 1);
-		}
-		io.emit('getOnlines', { init: false, session: $session });
+		client.smembers('online', (err, reply) => {
+			if (err) return console.log(err);
+			let onlineJSON = parseResult(reply);
+			const item = onlineJSON.filter((item) => {
+				return item.socket === socket.id;
+			})[0];
+			if (item) {
+				client.srem(['onlineUsernames', item.user], (err, result) => {
+					if (err) return console.log(err);
+					if (result === 1) {
+						let itemToDelete = getItemByResult(reply, item.user);
+						client.srem(['online', itemToDelete], (err, result) => {
+							if (err) return console.log(err);
+							if (result === 1) {
+								client.smembers('online', (err, reply) => {
+									if (err) return console.log(err);
+									let onlineJSON = parseResult(reply);
+									io.emit('getOnlines', { init: false, session: onlineJSON });
+								});
+							}
+						});
+
+					}
+				});
+			}
+		});
 	});
 
 });
@@ -188,15 +240,27 @@ const verifyExistUser = (user, session) => {
 	return exist;
 }
 
-const getSocketId = (socket, session) => {
-	let position;
-	for (let i = 0; i < session.length; i++) {
-		if (socket === session[i].socket) {
-			position = i;
-			break;
-		}
+const parseResult = (array) => {
+	const arrayResult = [];
+	for (let item in array) {
+		arrayResult.push(JSON.parse(array[item]));
 	}
-	return position;
+	return arrayResult;
+}
+
+const getItemByResult = (reply, username) => {
+	let element = '';
+	if (reply.length > 0) {
+		reply.forEach((item) => {
+			if (item.includes(username)) {
+				element = item;
+				return;
+			}
+		});
+		return element;
+	}
+
+	return arrayResult;
 }
 
 app.get('/', (req, res) => {

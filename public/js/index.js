@@ -59,6 +59,8 @@ socket.on('loadChallenge', function (challenge) {
 });
 
 socket.on('getChallenges', function (data) {
+	console.log('*********** challenges ***************');
+	console.log(data);
 	var userlogged = $('#userLogged').val();
 	var challenges = data.challenges;
 	var arrayChallenges = challenges.filter(function (item) {
@@ -136,7 +138,7 @@ $("#signupForm").on('submit', function (e) {
 	var username = $('[name=username_new]').val();
 	$.ajax({
 		type: 'POST',
-		url: herokuHost + 'players',
+		url: localhost + 'players',
 		contentType: 'application/json',
 		data: JSON.stringify({ username: username }),
 		success: processUserLogedIn,
@@ -151,7 +153,7 @@ $("#signinForm").on('submit', function (e) {
 	var username = $('[name=username]').val();
 	$.ajax({
 		type: 'POST',
-		url: herokuHost + 'login',
+		url: localhost + 'login',
 		contentType: 'application/json',
 		data: JSON.stringify({ username: username }),
 		success: processUserLogedIn,
@@ -166,6 +168,7 @@ function processUserLogedIn(data) {
 		$('.form-section').css('display', 'none');
 		$('#userLogged').val(data.username);
 		socket.emit('online', { username: data.username });
+		socket.emit('fetchChallenges');
 		$('.online-users').css('display', 'block');
 		$('.challenges').css('display', 'block');
 	}
@@ -175,7 +178,7 @@ function addOnlineUserToList(username) {
 	onlines.push(username);
 	$.ajax({
 		type: 'PUT',
-		url: herokuHost + 'online',
+		url: localhost + 'online',
 		contentType: 'application/json',
 		data: JSON.stringify({ username: username }),
 		success: function (data) {
@@ -248,7 +251,7 @@ function acceptChallenge(challenger) {
 	if (confirm) {
 		$.ajax({
 			type: 'POST',
-			url: herokuHost + 'challenges',
+			url: localhost + 'challenges',
 			contentType: 'application/json',
 			data: JSON.stringify(payload),
 			success: function (data) {
