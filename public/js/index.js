@@ -138,7 +138,7 @@ $("#signupForm").on('submit', function (e) {
 	var username = $('[name=username_new]').val();
 	$.ajax({
 		type: 'POST',
-		url: localhost + 'players',
+		url: herokuHost + 'players',
 		contentType: 'application/json',
 		data: JSON.stringify({ username: username }),
 		success: processUserLogedIn,
@@ -153,7 +153,7 @@ $("#signinForm").on('submit', function (e) {
 	var username = $('[name=username]').val();
 	$.ajax({
 		type: 'POST',
-		url: localhost + 'login',
+		url: herokuHost + 'login',
 		contentType: 'application/json',
 		data: JSON.stringify({ username: username }),
 		success: processUserLogedIn,
@@ -178,7 +178,7 @@ function addOnlineUserToList(username) {
 	onlines.push(username);
 	$.ajax({
 		type: 'PUT',
-		url: localhost + 'online',
+		url: herokuHost + 'online',
 		contentType: 'application/json',
 		data: JSON.stringify({ username: username }),
 		success: function (data) {
@@ -251,7 +251,7 @@ function acceptChallenge(challenger) {
 	if (confirm) {
 		$.ajax({
 			type: 'POST',
-			url: localhost + 'challenges',
+			url: herokuHost + 'challenges',
 			contentType: 'application/json',
 			data: JSON.stringify(payload),
 			success: function (data) {

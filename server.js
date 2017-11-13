@@ -13,7 +13,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-const client = redis.createClient();
+const client = redis.createClient('14315', 'redis-14315.c17.us-east-1-4.ec2.cloud.redislabs.com');
 
 client.on('connect', () => {
 	console.log('redis connected!');
@@ -28,7 +28,6 @@ io.on('connection', (socket) => {
 		client.smembers('challenges', (err, reply) => {
 			if (err) return console.log(err);
 			let result = parseResult(reply);
-			console.log(result);
 			socket.emit('getChallenges', { init: true, challenges: result });
 		});
 	});
